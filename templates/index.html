@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Prompts Vault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  </head>
+  <body
+    data-created="{{ 'true' if created else 'false' }}"
+    data-updated="{{ 'true' if updated else 'false' }}"
+    data-deleted="{{ 'true' if deleted else 'false' }}"
+    data-error="{{ error or '' }}"
+    data-create-url="{{ url_for('create_prompt') }}"
+    data-update-url="{{ url_for('update_prompt') }}"
+  >
+    <main class="page">
+      <header class="hero">
+        <div class="hero__text">
+          <div class="badge">
+            <span>✨</span>
+            <span>Prompt Collections</span>
+          </div>
+          <h1>Prompt Library</h1>
+          <p>Create, organise, and grab your go-to prompts in a snap. Upload cover art, tag your favourites, and keep your creative spark within reach.</p>
+        </div>
+        <div class="hero__actions">
+          <button class="button button--ghost" id="themeToggle" type="button" aria-label="Toggle theme">
+            <span class="button__icon" aria-hidden="true">🌙</span>
+            <span class="button__label">Toggle theme</span>
+          </button>
+          <button class="button button--primary" id="newPromptBtn" type="button">
+            <span class="button__icon" aria-hidden="true">➕</span>
+            <span class="button__label">New prompt</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="controls">
+        <label class="field">
+          <span class="field__label">Search</span>
+          <input type="search" id="searchInput" placeholder="Search titles, descriptions, or content" />
+        </label>
+        <label class="field">
+          <span class="field__label">Tag</span>
+          <select id="tagFilter">
+            <option value="all">All tags</option>
+            {% for tag in tags %}
+            <option value="{{ tag }}">{{ tag }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </section>
+
+      {% if prompts %}
+      <section class="prompt-grid" id="promptGrid">
+        <div class="prompt-grid__sizer" aria-hidden="true"></div>
+        {% for prompt in prompts %}
+        <article
+          class="prompt-card"
+          data-title="{{ prompt.title|lower }}"
+          data-description="{{ prompt.description|lower }}"
+          data-title-raw="{{ prompt.title }}"
+          data-description-raw="{{ prompt.description }}"
+          data-tags="{{ prompt.tags|join(',')|lower }}"
+          data-tags-str="{{ prompt.tags_string }}"
+          data-filename="{{ prompt.filename }}"
+          data-image="{{ prompt.image or '' }}"
+          data-markdown='{{ prompt.content|tojson }}'
+        >
+          {% if prompt.image %}
+          <div class="prompt-card__media">
+            <img src="{{ url_for('static', filename=prompt.image) }}" alt="Preview for {{ prompt.title }}" class="prompt-image" />
+          </div>
+          {% endif %}
+
+          <div class="prompt-card__body">
+            <h2>{{ prompt.title }}</h2>
+            {% if prompt.tags %}
+            <div class="meta">
+              {% for tag in prompt.tags %}
+              <span class="tag-pill">#{{ tag }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="prompt-card__content markdown-body">{{ prompt.html | safe }}</div>
+
+          <div class="prompt-card__footer">
+            <div class="prompt-card__actions">
+              <button class="pill-button button--copy" type="button">
+                <span class="button__icon" aria-hidden="true">📋</span>
+                <span class="button__label">Copy</span>
+              </button>
+              <div class="prompt-card__icon-row">
+                <button class="icon-button button--edit" type="button" aria-label="Edit prompt">
+                  <span aria-hidden="true">✏️</span>
+                </button>
+                <form method="post" action="{{ url_for('delete_prompt') }}" class="delete-form">
+                  <input type="hidden" name="filename" value="{{ prompt.filename }}" />
+                  <button class="icon-button icon-button--danger" type="submit" aria-label="Delete prompt">
+                    <span aria-hidden="true">🗑️</span>
+                  </button>
+                </form>
+              </div>
+            </div>
+            <span class="prompt-card__filename">{{ prompt.filename }}</span>
+          </div>
+        </article>
+        {% endfor %}
+      </section>
+      {% else %}
+      <div class="empty-state">
+        <h2>No prompts yet</h2>
+        <p>Drop markdown files in the <code>prompts/</code> directory or tap “New prompt” to craft one now.</p>
+      </div>
+      {% endif %}
+
+      <footer class="footer">
+        Built with Flask • Prompts folder: <code>{{ prompts_dir }}</code>
+      </footer>
+    </main>
+
+  <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script src="https://unpkg.com/masonry-layout@4/dist/masonry.pkgd.min.js"></script>
+    <section class="modal" id="promptModal" aria-hidden="true">
+      <div class="modal__backdrop" data-close-modal></div>
+      <div class="modal__content" role="dialog" aria-labelledby="modalTitle">
+        <header class="modal__header">
+          <h2 id="modalTitle">Create a new prompt</h2>
+          <button class="modal__close" type="button" data-close-modal aria-label="Close">✕</button>
+        </header>
+        <form class="prompt-form" method="post" action="{{ url_for('create_prompt') }}" enctype="multipart/form-data" id="promptForm">
+          <input type="hidden" name="original_filename" value="" />
+          <input type="hidden" name="remove_image" value="0" />
+          <div class="prompt-form__grid">
+            <label class="field">
+              <span class="field__label">Title *</span>
+              <input type="text" name="title" placeholder="e.g. Neon aerial cityscape" required />
+            </label>
+            <label class="field">
+              <span class="field__label">Tags (comma separated)</span>
+              <input type="text" name="tags" placeholder="midjourney, cyberpunk" />
+            </label>
+            <label class="field">
+              <span class="field__label">Cover image</span>
+              <input type="file" name="image" accept=".png,.jpg,.jpeg,.gif,.webp,.svg" />
+            </label>
+          </div>
+          <label class="field">
+            <span class="field__label">Description</span>
+            <textarea name="description" rows="3" placeholder="Optional short summary for the card"></textarea>
+          </label>
+          <div class="field field--checkbox" id="removeImageField" hidden>
+            <label class="field__checkbox">
+              <input type="checkbox" id="removeImageCheckbox" />
+              <span>Remove existing cover image</span>
+            </label>
+          </div>
+          <label class="field">
+            <span class="field__label">Prompt (Markdown) *</span>
+            <textarea name="prompt" rows="12" placeholder="Write the prompt copy using Markdown..." required></textarea>
+            <span class="field__hint">Supports headings, bold/italic, lists, links, and code blocks.</span>
+          </label>
+          <div class="prompt-form__actions">
+            <button class="button button--ghost" type="button" data-close-modal>Cancel</button>
+            <button class="button button--primary" type="submit">Save prompt</button>
+          </div>
+        </form>
+        <p class="modal__hint">Prompts are stored as Markdown inside <code>{{ prompts_dir }}</code>. Images are uploaded to <code>static/uploads/</code>.</p>
+      </div>
+    </section>
+
+    <template id="toastTemplate">
+      <div class="toast" role="status"></div>
+    </template>
+
+    <script>
+      const root = document.documentElement;
+      const searchInput = document.getElementById('searchInput');
+      const tagFilter = document.getElementById('tagFilter');
+      const promptGrid = document.getElementById('promptGrid');
+      const themeToggle = document.getElementById('themeToggle');
+      const modal = document.getElementById('promptModal');
+      const newPromptBtn = document.getElementById('newPromptBtn');
+      const toastTemplate = document.getElementById('toastTemplate');
+      const promptForm = document.getElementById('promptForm');
+      const modalTitle = document.getElementById('modalTitle');
+      const removeImageField = document.getElementById('removeImageField');
+      const removeImageCheckbox = document.getElementById('removeImageCheckbox');
+      const removeImageInput = promptForm?.querySelector('input[name="remove_image"]');
+      const originalFilenameInput = promptForm?.querySelector('input[name="original_filename"]');
+      const titleField = promptForm?.querySelector('input[name="title"]');
+      const tagsField = promptForm?.querySelector('input[name="tags"]');
+      const descriptionField = promptForm?.querySelector('textarea[name="description"]');
+      const markdownField = promptForm?.querySelector('textarea[name="prompt"]');
+      const submitButton = promptForm?.querySelector('button[type="submit"]');
+      const createUrl = document.body.dataset.createUrl;
+      const updateUrl = document.body.dataset.updateUrl;
+      let masonryInstance;
+
+      const layoutMasonry = (options = {}) => {
+        if (!masonryInstance) return;
+        if (options.reload) {
+          masonryInstance.reloadItems();
+        }
+        masonryInstance.layout();
+      };
+
+      const initMasonry = () => {
+        if (!promptGrid) return;
+        if (typeof Masonry === 'undefined' || typeof imagesLoaded === 'undefined') return;
+        if (!promptGrid.querySelector('.prompt-card')) return;
+        masonryInstance = new Masonry(promptGrid, {
+          itemSelector: '.prompt-card',
+          columnWidth: '.prompt-grid__sizer',
+          percentPosition: true,
+          gutter: 24,
+          transitionDuration: '0.3s',
+        });
+
+        const loader = imagesLoaded(promptGrid);
+        loader.on('progress', () => layoutMasonry());
+        loader.on('always', () => layoutMasonry({ reload: true }));
+
+        layoutMasonry({ reload: true });
+      };
+
+      const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+      const storedTheme = localStorage.getItem('prompt-theme');
+      const applyTheme = (theme) => {
+        root.classList.toggle('dark-theme', theme === 'dark');
+        const icon = themeToggle?.querySelector('.button__icon');
+        if (icon) {
+          icon.textContent = theme === 'dark' ? '🌞' : '🌙';
+        }
+      };
+
+      const initialTheme = storedTheme || (prefersDarkScheme.matches ? 'dark' : 'light');
+      applyTheme(initialTheme);
+
+      themeToggle?.addEventListener('click', () => {
+        const current = root.classList.contains('dark-theme') ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('prompt-theme', next);
+      });
+
+      const showToast = (message, tone = 'success') => {
+        const fragment = toastTemplate.content.cloneNode(true);
+        const toast = fragment.querySelector('.toast');
+        toast.textContent = message;
+        toast.dataset.tone = tone;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.add('toast--visible');
+        });
+        setTimeout(() => {
+          toast.classList.remove('toast--visible');
+          setTimeout(() => toast.remove(), 300);
+        }, 2500);
+      };
+
+      const parseJsonDataset = (value) => {
+        if (!value) return '';
+        try {
+          return JSON.parse(value);
+        } catch (_) {
+          return value;
+        }
+      };
+
+      const resetForm = () => {
+        if (!promptForm) return;
+        promptForm.reset();
+        promptForm.action = createUrl;
+        if (modalTitle) modalTitle.textContent = 'Create a new prompt';
+        if (submitButton) submitButton.textContent = 'Save prompt';
+        if (originalFilenameInput) originalFilenameInput.value = '';
+        if (removeImageInput) removeImageInput.value = '0';
+        if (removeImageCheckbox) removeImageCheckbox.checked = false;
+        if (removeImageField) removeImageField.hidden = true;
+      };
+
+      const showModal = () => {
+        modal?.setAttribute('aria-hidden', 'false');
+        modal?.classList.add('modal--open');
+        titleField?.focus();
+      };
+
+      const closeModal = () => {
+        modal?.setAttribute('aria-hidden', 'true');
+        modal?.classList.remove('modal--open');
+      };
+
+      const populateFormForEdit = (card) => {
+        if (!card || !promptForm) return;
+        resetForm();
+        promptForm.action = updateUrl;
+        if (modalTitle) modalTitle.textContent = 'Edit prompt';
+        if (submitButton) submitButton.textContent = 'Update prompt';
+
+        if (titleField) titleField.value = card.dataset.titleRaw ?? '';
+        if (tagsField) tagsField.value = card.dataset.tagsStr ?? '';
+        if (descriptionField) descriptionField.value = card.dataset.descriptionRaw ?? '';
+        if (originalFilenameInput) originalFilenameInput.value = card.dataset.filename ?? '';
+
+        const markdown = parseJsonDataset(card.dataset.markdown);
+        if (markdownField) markdownField.value = markdown ?? '';
+
+        const hasImage = Boolean(card.dataset.image);
+        if (removeImageField) removeImageField.hidden = !hasImage;
+        if (removeImageInput) removeImageInput.value = '0';
+        if (removeImageCheckbox) removeImageCheckbox.checked = false;
+      };
+
+      const filterPrompts = () => {
+        const query = searchInput?.value.trim().toLowerCase() ?? '';
+        const tag = tagFilter?.value.toLowerCase() ?? 'all';
+        const cards = promptGrid?.querySelectorAll('.prompt-card') ?? [];
+
+        let visibleCount = 0;
+        cards.forEach((card) => {
+          const title = card.dataset.title ?? '';
+          const description = card.dataset.description ?? '';
+          const tags = card.dataset.tags ?? '';
+          const bodyText = card.querySelector('.markdown-body')?.innerText.toLowerCase() ?? '';
+
+          const matchesQuery =
+            !query ||
+            title.includes(query) ||
+            description.includes(query) ||
+            bodyText.includes(query);
+
+          const tagList = tags
+            .split(',')
+            .map((value) => value.trim())
+            .filter(Boolean);
+          const matchesTag = tag === 'all' || tagList.includes(tag);
+
+          const isVisible = matchesQuery && matchesTag;
+          card.style.display = isVisible ? '' : 'none';
+          if (isVisible) visibleCount += 1;
+        });
+
+        promptGrid?.classList.toggle('prompt-grid--empty', visibleCount === 0);
+
+        if (masonryInstance) {
+          requestAnimationFrame(() => layoutMasonry({ reload: true }));
+        }
+      };
+
+      [searchInput, tagFilter].forEach((input) => {
+        input?.addEventListener('input', filterPrompts);
+        input?.addEventListener('change', filterPrompts);
+      });
+
+      filterPrompts();
+      initMasonry();
+
+      document.querySelectorAll('.button--copy').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const card = button.closest('.prompt-card');
+          const raw = card?.dataset.markdown ?? '';
+          const text = parseJsonDataset(raw);
+          if (!text || !String(text).trim()) {
+            showToast('Nothing to copy', 'error');
+            return;
+          }
+          try {
+            await navigator.clipboard.writeText(text);
+            showToast('Prompt copied to clipboard');
+          } catch (error) {
+            console.error('Clipboard error', error);
+            showToast('Copy failed. Try manually.', 'error');
+          }
+        });
+      });
+
+      document.querySelectorAll('.button--edit').forEach((button) => {
+        button.addEventListener('click', () => {
+          const card = button.closest('.prompt-card');
+          populateFormForEdit(card);
+          showModal();
+        });
+      });
+
+      document.querySelectorAll('.delete-form').forEach((form) => {
+        form.addEventListener('submit', (event) => {
+          const card = form.closest('.prompt-card');
+          const title = card?.dataset.titleRaw ?? 'this prompt';
+          const confirmed = window.confirm(`Delete "${title}"? This action cannot be undone.`);
+          if (!confirmed) {
+            event.preventDefault();
+          }
+        });
+      });
+
+      newPromptBtn?.addEventListener('click', () => {
+        resetForm();
+        showModal();
+      });
+
+      modal?.querySelectorAll('[data-close-modal]').forEach((el) => {
+        el.addEventListener('click', () => {
+          closeModal();
+          resetForm();
+        });
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeModal();
+          resetForm();
+        }
+      });
+
+      removeImageCheckbox?.addEventListener('change', (event) => {
+        if (removeImageInput) {
+          removeImageInput.value = event.target.checked ? '1' : '0';
+        }
+      });
+
+      if (document.body.dataset.created === 'true') {
+        showToast('Prompt saved 🎉');
+      }
+      if (document.body.dataset.updated === 'true') {
+        showToast('Prompt updated ✏️');
+      }
+      if (document.body.dataset.deleted === 'true') {
+        showToast('Prompt deleted 🗑️');
+      }
+      const errorCode = document.body.dataset.error;
+      if (errorCode === 'missing') {
+        showToast('Please add a title and prompt body', 'error');
+      }
+      if (errorCode === 'image') {
+        showToast('Unsupported image type. Try PNG, JPG, GIF, SVG, or WebP.', 'error');
+      }
+    </script>
+  </body>
+</html>

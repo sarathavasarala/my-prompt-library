@@ -1,0 +1,25 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0EA5E9" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.3" r="0.8">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)" />
+      <stop offset="70%" stop-color="rgba(255,255,255,0.1)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="800" fill="#0F172A" />
+  <circle cx="150" cy="120" r="220" fill="url(#glow)" />
+  <circle cx="980" cy="620" r="340" fill="url(#glow)" opacity="0.6" />
+  <rect x="120" y="180" width="960" height="520" rx="40" fill="rgba(15, 23, 42, 0.8)" stroke="rgba(255,255,255,0.12)" stroke-width="2" />
+  <rect x="180" y="240" width="840" height="120" rx="24" fill="rgba(56, 189, 248, 0.15)" />
+  <rect x="180" y="400" width="680" height="60" rx="16" fill="rgba(99, 102, 241, 0.2)" opacity="0.8" />
+  <rect x="180" y="490" width="740" height="60" rx="16" fill="rgba(56, 189, 248, 0.1)" opacity="0.8" />
+  <rect x="180" y="580" width="520" height="60" rx="16" fill="rgba(45, 212, 191, 0.2)" opacity="0.8" />
+  <circle cx="1020" cy="300" r="54" fill="url(#bg)" opacity="0.9" />
+  <circle cx="1020" cy="300" r="78" stroke="rgba(56, 189, 248, 0.3)" stroke-width="6" fill="none" />
+  <path d="M1018 268C1036 268 1050 282 1050 300C1050 308.5 1046.5 316 1041 321.5L1040.5 322L1038 324.5C1031.5 330.5 1028 338.5 1028 347V352H1008V347C1008 338.5 1004.5 330.5 998 324.5L995.5 322L995 321.5C989.5 316 986 308.5 986 300C986 282 1000 268 1018 268Z" fill="#0F172A" />
+  <rect x="1002" y="354" width="32" height="18" rx="6" fill="#0F172A" />
+</svg>
