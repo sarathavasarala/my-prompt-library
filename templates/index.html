@@ -200,9 +200,19 @@
       const createUrl = document.body.dataset.createUrl;
       const updateUrl = document.body.dataset.updateUrl;
       let masonryInstance;
+      let masonryResizeTimer;
+
+      const getMasonryGutter = () => {
+        if (!promptGrid) return 24;
+        const computed = window.getComputedStyle(promptGrid);
+        const raw = computed.getPropertyValue('--masonry-gutter');
+        const value = Number.parseFloat(raw);
+        return Number.isNaN(value) ? 24 : value;
+      };
 
       const layoutMasonry = (options = {}) => {
         if (!masonryInstance) return;
+        masonryInstance.options.gutter = getMasonryGutter();
         if (options.reload) {
           masonryInstance.reloadItems();
         }
@@ -216,8 +226,9 @@
         masonryInstance = new Masonry(promptGrid, {
           itemSelector: '.prompt-card',
           columnWidth: '.prompt-grid__sizer',
-          percentPosition: true,
-          gutter: 24,
+          percentPosition: false,
+          fitWidth: true,
+          gutter: getMasonryGutter(),
           transitionDuration: '0.3s',
         });
 
@@ -359,6 +370,14 @@
 
       filterPrompts();
       initMasonry();
+
+      window.addEventListener('resize', () => {
+        if (!masonryInstance) return;
+        window.clearTimeout(masonryResizeTimer);
+        masonryResizeTimer = window.setTimeout(() => {
+          layoutMasonry({ reload: true });
+        }, 120);
+      });
 
       document.querySelectorAll('.button--copy').forEach((button) => {
         button.addEventListener('click', async () => {

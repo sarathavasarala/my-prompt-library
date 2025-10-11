@@ -1,5 +1,6 @@
 ---
 title: Inside Style
+description: A moody, 2.5D cinematic scene of [subject] with a limited, desaturated color palette in shades of grey and muted earth tones, contrasted with occasional bold…
 image: uploads/inside-style-48efdeadfc3b429591025f71e3fbe0bc.png
 ---
 
