@@ -1,85 +1,92 @@
-# My Prompts Vault
+# Prompt Library
 
-A lightweight Flask app for browsing, filtering, and copying your favourite prompts. Drop Markdown files in the `prompts/` folder and the library updates instantly—perfect for writing, learning, brainstorming, and image generation workflows.
+A lightweight Flask application for managing and organizing text prompts. Store prompts as Markdown files in the `prompts/` folder and access them through a searchable web interface.
 
 ## Features
 
-- Light-first UI with optional dark mode and a wide, responsive masonry grid
-- Instant clipboard copy for each prompt (raw Markdown)
-- Create, edit, and delete prompts directly from the modal workflow
-- Filter by tag or free-text search across titles, descriptions, and content
-- Markdown-based storage—no database or external services required
+- Web-based interface with light and dark mode support
+- One-click clipboard copy for each prompt
+- Create, edit, and delete prompts through the UI
+- Filter by tags or search across titles, descriptions, and content
+- File-based storage with optional cover images
+- No database required
 
-## Project layout
+## Project Structure
 
 ```
-app.py                # Flask entrypoint
-prompts/              # Your prompt markdown files
+app.py                # Flask application
+prompts/              # Prompt markdown files
 static/
-  css/styles.css      # Theme and layout styles
-  images/             # Optional cover art for prompts
-  uploads/            # User-uploaded cover images (auto-created)
-templates/index.html  # Jinja2 template for the UI
+  css/styles.css      # Styles
+  images/             # Cover art for prompts
+  uploads/            # User-uploaded images (auto-created)
+templates/index.html  # Main template
 ```
 
-## Prompt file format
+## Prompt File Format
 
-Each prompt lives in its own `.md` file inside `prompts/`. Front matter metadata is optional, but helps keep things organised.
+Each prompt is stored as a `.md` file in the `prompts/` directory. Front matter metadata is optional but recommended for organization.
 
 ```markdown
 ---
-title: Learning Path - Practical AI
-description: 24-week roadmap balancing theory, projects, and career polish
-tags: curriculum, ai, roadmap
-image: images/cover.svg   # optional, relative to static/
+title: Example Prompt
+description: A brief description of what this prompt does
+tags: example, demo
+image: images/cover.svg
 ---
 Your prompt text goes here...
 ```
 
-Supported metadata keys:
+Supported metadata:
 
-- `title` (string) – displayed as the card title. Defaults to the filename.
-- `description` (string) – optional short blurb shown under the title.
-- `tags` (comma-separated list) – shown as #tags and used for filtering.
-- `image` (string) – path relative to `static/`, e.g. `images/my-cover.svg`.
+- `title` – Card title (defaults to filename if not specified)
+- `description` – Brief summary shown on the card
+- `tags` – Comma-separated list for filtering
+- `image` – Path relative to `static/` directory
 
-The Markdown body becomes the rendered preview on each card and the text copied to your clipboard.
+The Markdown body is rendered as a preview and copied to the clipboard when the copy button is clicked.
 
-## Running locally
+## Setup
 
-### 1. Install dependencies
-
-```bash
-/Users/sarathavasarala/Desktop/Projects/my_prompts/.venv/bin/python -m pip install -r requirements.txt
-```
-
-### 2. Start the dev server
+### Install Dependencies
 
 ```bash
-FLASK_APP=app.py FLASK_ENV=development /Users/sarathavasarala/Desktop/Projects/my_prompts/.venv/bin/python -m flask run
+pip install -r requirements.txt
 ```
 
-Visit <http://127.0.0.1:5000> to browse your prompts.
+### Run the Application
 
-## Adding new prompts
+```bash
+python app.py
+```
 
-Use the **New prompt** button in the top-right corner to launch the creation modal, fill in the form, and optionally upload cover art (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`). Prompts are saved into `prompts/` and images land in `static/uploads/` automatically.
+The application will start at `http://127.0.0.1:5000`.
 
-Prefer manual edits? You can still drop a new Markdown file into `prompts/`. For example:
+## Usage
+
+### Adding Prompts
+
+Use the **New prompt** button to create prompts through the web interface. You can add a title, description, tags, and upload cover images (`.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.svg`).
+
+Alternatively, create Markdown files directly in the `prompts/` directory:
 
 ```markdown
 ---
-title: Interview Icebreakers
-description: A couple of quick conversation starters for teams meeting for the first time
-tags: icebreaker, conversation
+title: Example Template
+description: Quick description of the prompt
+tags: template, example
 ---
-Share a time when you felt surprisingly proud of a small win.
-If time is short, ask each person to finish the sentence: "Lately I've been curious about..."
+Your prompt content here.
 ```
 
-Refresh the page and the new card appears instantly. No reloads or redeploys needed.
+Refresh the page to see new prompts appear.
 
-## Notes & next steps
+### Editing and Deleting
 
-- Want to sync prompts across devices? Commit the `prompts/` folder to Git or sync it with your favourite cloud storage.
-- You can customise styling via `static/css/styles.css` or extend the template with additional filters and views.
+Click on any prompt card to view, edit, or delete it. Changes are reflected immediately in the file system.
+
+## Notes
+
+- Prompts are stored as files, making them easy to version control with Git or sync with cloud storage
+- Customize the interface by editing `static/css/styles.css`
+- Supported image formats: PNG, JPG, JPEG, GIF, WebP, SVG
