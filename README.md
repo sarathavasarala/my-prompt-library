@@ -2,6 +2,8 @@
 
 A lightweight Flask application for managing and organizing text prompts. Store prompts as Markdown files in the `prompts/` folder and access them through a searchable web interface.
 
+![Application Screenshot](app%20screenshot.jpeg)
+
 ## Features
 
 - Web-based interface with light and dark mode support
