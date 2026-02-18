@@ -1,9 +1,19 @@
+import os
 import re
+import secrets
+from functools import wraps
 from pathlib import Path
 from typing import Dict, List
 from uuid import uuid4
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from markdown import markdown as render_markdown
 from werkzeug.utils import secure_filename
 
@@ -14,9 +24,67 @@ ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "svg"}
 
 app = Flask(__name__)
 
+# --- Auth config -----------------------------------------------------------
+# Set these as environment variables (never hard-code them).
+# SECRET_KEY: any long random string — used to sign the session cookie.
+# APP_PASSWORD: the password you'll enter on first visit.
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+
+# Session cookie lasts 30 days; HttpOnly + SameSite for basic security.
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=60 * 60 * 24 * 30,  # 30 days in seconds
+)
+# ---------------------------------------------------------------------------
+
 PROMPTS_DIR.mkdir(exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+
+# ---------------------------------------------------------------------------
+# Auth helpers
+# ---------------------------------------------------------------------------
+
+def login_required(f):
+    """Redirect to /login if the user has not authenticated."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get("authenticated"):
+            return redirect(url_for("login", next=request.path))
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if session.get("authenticated"):
+        return redirect(url_for("index"))
+
+    error = None
+    if request.method == "POST":
+        entered = request.form.get("password", "")
+        if APP_PASSWORD and secrets.compare_digest(entered, APP_PASSWORD):
+            session.permanent = True
+            session["authenticated"] = True
+            next_url = request.form.get("next") or url_for("index")
+            return redirect(next_url)
+        error = "Incorrect password. Try again."
+
+    next_url = request.args.get("next", "")
+    return render_template("login.html", error=error, next=next_url)
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# ---------------------------------------------------------------------------
+# Template globals
+# ---------------------------------------------------------------------------
 
 @app.context_processor
 def inject_globals():
@@ -26,6 +94,10 @@ def inject_globals():
         prompts_dir = PROMPTS_DIR
     return {"prompts_dir": prompts_dir}
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def slugify(value: str) -> str:
     sanitized = re.sub(r"[^a-z0-9]+", "-", value.strip().lower())
@@ -46,7 +118,7 @@ def summarize_markdown(text: str, fallback: str = "") -> str:
 
     cleaned = re.sub(r"`([^`]+)`", r"\1", text)
     cleaned = re.sub(r"\[(.*?)\]\(.*?\)", r"\1", cleaned)
-    cleaned = re.sub(r"[#*>\-]+", " ", cleaned)
+    cleaned = re.sub(r"[#*>\\-]+", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
     if len(cleaned) <= 160:
@@ -119,7 +191,12 @@ def load_prompts() -> List[Dict]:
     return [prompt for prompt in prompts if prompt["content"]]
 
 
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
+
 @app.post("/create")
+@login_required
 def create_prompt():
     title = request.form.get("title", "").strip()
     description = request.form.get("description", "").strip()
@@ -166,6 +243,7 @@ def create_prompt():
 
 
 @app.post("/update")
+@login_required
 def update_prompt():
     original_filename = request.form.get("original_filename", "").strip()
     original_path = PROMPTS_DIR / original_filename
@@ -230,6 +308,7 @@ def update_prompt():
 
 
 @app.post("/delete")
+@login_required
 def delete_prompt():
     filename = request.form.get("filename", "").strip()
     prompt_path = PROMPTS_DIR / filename
@@ -247,6 +326,7 @@ def delete_prompt():
 
 
 @app.route("/")
+@login_required
 def index():
     prompts = load_prompts()
     tags = sorted({tag for prompt in prompts for tag in prompt["tags"]})

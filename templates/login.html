@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign in — My Prompts Vault</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+    <style>
+      .login-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .login-card {
+        background: var(--surface, #fff);
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 1rem;
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 380px;
+        box-shadow: 0 4px 24px rgba(0,0,0,.08);
+      }
+      .login-card .badge {
+        margin-bottom: 1.25rem;
+      }
+      .login-card h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 0 .375rem;
+      }
+      .login-card p {
+        color: var(--text-muted, #6b7280);
+        font-size: .9rem;
+        margin: 0 0 1.75rem;
+      }
+      .login-card .field {
+        margin-bottom: 1.25rem;
+      }
+      .login-card .field input[type="password"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .login-card .button--primary {
+        width: 100%;
+        justify-content: center;
+        margin-top: .25rem;
+      }
+      .login-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        border-radius: .5rem;
+        padding: .625rem .875rem;
+        font-size: .875rem;
+        margin-bottom: 1rem;
+      }
+      .dark-theme .login-error {
+        background: #450a0a;
+        color: #fca5a5;
+        border-color: #7f1d1d;
+      }
+      .theme-toggle-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-page">
+      <div class="login-card">
+        <div class="theme-toggle-row">
+          <button class="button button--ghost" id="themeToggle" type="button" aria-label="Toggle theme">
+            <span class="button__icon" aria-hidden="true">🌙</span>
+            <span class="button__label">Toggle theme</span>
+          </button>
+        </div>
+
+        <div class="badge">
+          <span>✨</span>
+          <span>Prompt Collections</span>
+        </div>
+        <h1>My Prompts Vault</h1>
+        <p>Enter your password to access the library.</p>
+
+        {% if error %}
+        <div class="login-error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('login') }}">
+          <input type="hidden" name="next" value="{{ next }}" />
+          <div class="field">
+            <label class="field__label" for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter password"
+              autocomplete="current-password"
+              autofocus
+              required
+            />
+          </div>
+          <button class="button button--primary" type="submit">
+            <span class="button__label">Sign in</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const root = document.documentElement;
+      const themeToggle = document.getElementById('themeToggle');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+      const stored = localStorage.getItem('prompt-theme');
+      const applyTheme = (theme) => {
+        root.classList.toggle('dark-theme', theme === 'dark');
+        const icon = themeToggle?.querySelector('.button__icon');
+        if (icon) icon.textContent = theme === 'dark' ? '🌞' : '🌙';
+      };
+      applyTheme(stored || (prefersDark.matches ? 'dark' : 'light'));
+      themeToggle?.addEventListener('click', () => {
+        const next = root.classList.contains('dark-theme') ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('prompt-theme', next);
+      });
+    </script>
+  </body>
+</html>
